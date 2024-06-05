@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.340">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="API: The inputs for designing and analyzing EVCI sites in urban areas are specified through excel sheets. The python code reads these inputs parameters from the following excel sheets for analysis.">
+
+<title>evci_tool - EVCI config - for urban areas</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="evci_tool - EVCI config - for urban areas">
+<meta property="og:description" content="API: The inputs for designing and analyzing EVCI sites in urban areas are specified through excel sheets. The python code reads these inputs parameters from the following excel sheets for analysis.">
+<meta property="og:site-name" content="evci_tool">
+<meta name="twitter:title" content="evci_tool - EVCI config - for urban areas">
+<meta name="twitter:description" content="API: The inputs for designing and analyzing EVCI sites in urban areas are specified through excel sheets. The python code reads these inputs parameters from the following excel sheets for analysis.">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">evci_tool</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools ms-auto">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./config.html">EVCI config - for urban areas</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">EVCI Siting Tool</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./config.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">EVCI config - for urban areas</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">EVCI siting model</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./maps.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">EVCI maps</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">EVCI analysis</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#read-input-data" id="toc-read-input-data" class="nav-link active" data-scroll-target="#read-input-data">Read input data</a>
+  <ul class="collapse">
+  <li><a href="#check_files_availability" id="toc-check_files_availability" class="nav-link" data-scroll-target="#check_files_availability">check_files_availability</a></li>
+  <li><a href="#setup_and_read_data" id="toc-setup_and_read_data" class="nav-link" data-scroll-target="#setup_and_read_data">setup_and_read_data</a></li>
+  </ul></li>
+  <li><a href="#data-availability-check" id="toc-data-availability-check" class="nav-link" data-scroll-target="#data-availability-check">Data availability check</a>
+  <ul class="collapse">
+  <li><a href="#data_availability_check" id="toc-data_availability_check" class="nav-link" data-scroll-target="#data_availability_check">data_availability_check</a></li>
+  </ul></li>
+  <li><a href="#data-integrity-check" id="toc-data-integrity-check" class="nav-link" data-scroll-target="#data-integrity-check">Data integrity check</a>
+  <ul class="collapse">
+  <li><a href="#data_integrity_check" id="toc-data_integrity_check" class="nav-link" data-scroll-target="#data_integrity_check">data_integrity_check</a></li>
+  <li><a href="#data_missing_check" id="toc-data_missing_check" class="nav-link" data-scroll-target="#data_missing_check">data_missing_check</a></li>
+  </ul></li>
+  <li><a href="#read-global-variables-from-xlsx" id="toc-read-global-variables-from-xlsx" class="nav-link" data-scroll-target="#read-global-variables-from-xlsx">Read global variables from xlsx</a>
+  <ul class="collapse">
+  <li><a href="#get_category" id="toc-get_category" class="nav-link" data-scroll-target="#get_category">get_category</a></li>
+  <li><a href="#get_grid_data" id="toc-get_grid_data" class="nav-link" data-scroll-target="#get_grid_data">get_grid_data</a></li>
+  <li><a href="#read_globals" id="toc-read_globals" class="nav-link" data-scroll-target="#read_globals">read_globals</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/AnoopRKulkarni/evci_tool/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">EVCI config - for urban areas</h1>
+</div>
+
+<div>
+  <div class="description">
+    <strong>API</strong>: The inputs for designing and analyzing EVCI sites in urban areas are specified through excel sheets. The python code reads these inputs parameters from the following excel sheets for analysis.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<ol type="1">
+<li>model.xlsx - This contains all the global parameters that are model specific. They remain valid for every urban area that is being analyzed.</li>
+<li>sites.xlsx - This contains a list of sites, with their latitude and longitude for analysis. This is an initial list of sites. This file needs to be created for each urban area. Sites can be filtered based on the planning scenarios.</li>
+<li>traffic.xlsx - This contains typical traffic profiles for each site category around the sites for each urban area. This file is used to assign a traffic profile to each site based on its category.</li>
+<li>grid.xlsx - This contains information about neighboring distribution transformers from where the chargers deployed at each site will draw power from.</li>
+<li>parking.xlsx - This contains multiple worksheets, each corresponding to a parking profile. Each site is assigned a parking profile based on its category.</li>
+</ol>
+<section id="read-input-data" class="level1">
+<h1>Read input data</h1>
+<hr>
+<section id="check_files_availability" class="level3">
+<h3 class="anchored" data-anchor-id="check_files_availability">check_files_availability</h3>
+<blockquote class="blockquote">
+<pre><code> check_files_availability (urban_area:str, input_path='data/sites/')</code></pre>
+</blockquote>
+<p>This function simply checks if all the required input files mentioned above are available.</p>
+<p><code>Arguments</code>:</p>
+<ol type="1">
+<li><code>uban_area</code>: a string that identifies the urban area being analyzed (e.g.&nbsp;‘goa’)</li>
+<li><code>input_path</code>: a string denoting base directory under which input files (xlsx and others) are available for analysis. Default is <code>'/mnt/sites/'</code></li>
+</ol>
+<p><code>Returns</code>:</p>
+<p><code>files_not_found</code>: a list of filenames not found in the default and/or specified path.</p>
+<hr>
+</section>
+<section id="setup_and_read_data" class="level3">
+<h3 class="anchored" data-anchor-id="setup_and_read_data">setup_and_read_data</h3>
+<blockquote class="blockquote">
+<pre><code> setup_and_read_data (urban_area:str, input_path='data/sites/',
+                      output_path='data/analysis/', request_id='')</code></pre>
+</blockquote>
+<p>This function sets up paths and reads input excel files for a specified corridor</p>
+<p><code>Arguments</code>:</p>
+<ol type="1">
+<li><code>urban_area</code>: a string that identifies the urban area being analyzed (e.g.&nbsp;‘goa’)</li>
+<li><code>input_path</code>: a string denoting base directory under which input files (xlsx and other) are available for analysis. Default is <code>'/mnt/sites/'</code></li>
+<li><code>output_path</code>: a string denoting base directory under which output files will be stored. Default is <code>'/mnt/analysis/'</code></li>
+<li><code>request_id</code>: a string denoting the request ID (specific to user credentials)</li>
+</ol>
+<p><code>Returns</code>:</p>
+<ol type="1">
+<li><code>model</code>: dataframe of model parameters (from model.xlsx)</li>
+<li><code>sites</code>: dataframe of sites (from sites.xlsx)</li>
+<li><code>traffic</code>: dataframe of traffic profiles (from traffic.xlsx)</li>
+<li><code>grid</code>: dataframe of grid parameters (from grid.xlsx)</li>
+<li><code>parking</code>: dataframe of parking profiles (from parking.xlsx)</li>
+<li><code>INPUT_PATH</code>: a string indicating the input_path (e.g.&nbsp;input/goa/)</li>
+<li><code>OUTPUT_PATH</code>: a string indicating the output path (e.g.&nbsp;output/goa/)</li>
+</ol>
+<div class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#example_usage</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>files_not_fouund <span class="op">=</span> check_files_availability(<span class="st">'panaji'</span>,input_path<span class="op">=</span><span class="st">'data/sites/'</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>files_not_fouund</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<pre><code>[]</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#example usage</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>m,s,t,g,p,i,o <span class="op">=</span> setup_and_read_data(<span class="st">'panaji'</span>, input_path<span class="op">=</span><span class="st">"data/sites/"</span>, output_path<span class="op">=</span><span class="st">"data/analysis/"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="data-availability-check" class="level1">
+<h1>Data availability check</h1>
+<p>Let’s check if the input excel sheets provided have the correctly named worksheets within them.</p>
+<hr>
+<section id="data_availability_check" class="level3">
+<h3 class="anchored" data-anchor-id="data_availability_check">data_availability_check</h3>
+<blockquote class="blockquote">
+<pre><code> data_availability_check (m, s, t, g, p)</code></pre>
+</blockquote>
+<p>This function checks if the excel files contain the mandatory worksheets.</p>
+<p><code>Arguments</code>:</p>
+<ol type="1">
+<li><code>m</code>: dataframe of model parameters (from model.xlsx)</li>
+<li><code>s</code>: dataframe of sites (from sites.xlsx)</li>
+<li><code>t</code>: dataframe of traffic profile (from traffic.xlsx)</li>
+<li><code>g</code>: dataframe of grid parameters (from grid.xlsx)</li>
+<li><code>p</code>: dataframe of parking parameters (from parking.xlsx)</li>
+</ol>
+<p><code>Returns</code>:</p>
+<p>A list of xlsx file names wiht missing mandatory sheets</p>
+<div class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>data_availability_check(m,s,t,g,p)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<pre><code>[]</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="data-integrity-check" class="level1">
+<h1>Data integrity check</h1>
+<p>Let’s now check if any of the mandatory columns in each of the worksheets are all empty!</p>
+<hr>
+<section id="data_integrity_check" class="level3">
+<h3 class="anchored" data-anchor-id="data_integrity_check">data_integrity_check</h3>
+<blockquote class="blockquote">
+<pre><code> data_integrity_check (m, s, t, g, p, verbose=False)</code></pre>
+</blockquote>
+<p>This function checks for integrity of excel data by checking missing values.</p>
+<p><code>Arguments</code>:</p>
+<ol type="1">
+<li><code>m</code>: dataframe of model parameters (from model.xlsx)</li>
+<li><code>s</code>: dataframe of sites (from sites.xlsx)</li>
+<li><code>t</code>: dataframe of traffic profile (from traffic.xlsx)</li>
+<li><code>g</code>: dataframe of grid parameters (from grid.xlsx)</li>
+</ol>
+<p><code>Returns</code>:</p>
+<p>A dictionary of missing columns with their corresponding xlsx filename and worksheet name.</p>
+<div class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>data_integrity_check(m,s,t,g,p)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="9">
+<pre><code>[{'planning_scenarios': [],
+  'charger_details': [],
+  'chargers_site_categories': [],
+  'chargers_opportunity_charging': [],
+  'battery_specific': [],
+  'others': []},
+ {'sites': []},
+ {'TF1': [], 'TF2': [], 'TF3': []},
+ {'grid': []},
+ {'BD': [], 'FH': [], 'PP': []}]</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># verbose output</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>data_integrity_check(m,s,t,g,p,verbose<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<hr>
+</section>
+<section id="data_missing_check" class="level3">
+<h3 class="anchored" data-anchor-id="data_missing_check">data_missing_check</h3>
+<blockquote class="blockquote">
+<pre><code> data_missing_check (sid, file, input_path='data/sites/')</code></pre>
+</blockquote>
+<p>Function checks for missing values in the excel data</p>
+</section>
+</section>
+<section id="read-global-variables-from-xlsx" class="level1">
+<h1>Read global variables from xlsx</h1>
+<hr>
+<section id="get_category" class="level3">
+<h3 class="anchored" data-anchor-id="get_category">get_category</h3>
+<blockquote class="blockquote">
+<pre><code> get_category (sid, input_path='data/sites/')</code></pre>
+</blockquote>
+<p>Function fetch site categories available in sites.xlsx file</p>
+<hr>
+</section>
+<section id="get_grid_data" class="level3">
+<h3 class="anchored" data-anchor-id="get_grid_data">get_grid_data</h3>
+<blockquote class="blockquote">
+<pre><code> get_grid_data (s, g)</code></pre>
+</blockquote>
+<p><code>Arguments</code>:</p>
+<ol type="1">
+<li><code>s</code>: dataframe of sites (from sites.xlsx)</li>
+<li><code>g</code>: dataframe of grid profile (from grid.xlsx)</li>
+</ol>
+<p><code>Returns</code>:</p>
+<p>Augmented data frame ‘s’ with lat,long of nearest transformer and its distance in kms from each site</p>
+<div class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>di <span class="op">=</span> get_grid_data(s,g)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>di.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="14">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Name</th>
+<th data-quarto-table-cell-role="th">Address</th>
+<th data-quarto-table-cell-role="th">Longitude</th>
+<th data-quarto-table-cell-role="th">Latitude</th>
+<th data-quarto-table-cell-role="th">Site category</th>
+<th data-quarto-table-cell-role="th">No. of charger bundles opportunity charging</th>
+<th data-quarto-table-cell-role="th">No. of charger bundles destination charging</th>
+<th data-quarto-table-cell-role="th">Parking lot size</th>
+<th data-quarto-table-cell-role="th">Peak opportunity charging traffic</th>
+<th data-quarto-table-cell-role="th">Opportunity charging traffic profile</th>
+<th data-quarto-table-cell-role="th">...</th>
+<th data-quarto-table-cell-role="th">Upfront cost per sqm (kiosk)</th>
+<th data-quarto-table-cell-role="th">Yearly cost per sqm (kiosk)</th>
+<th data-quarto-table-cell-role="th">Upfront cost per sqm (hoarding)</th>
+<th data-quarto-table-cell-role="th">Yearly cost per sqm (hoarding)</th>
+<th data-quarto-table-cell-role="th">Battery swap available</th>
+<th data-quarto-table-cell-role="th">geometry</th>
+<th data-quarto-table-cell-role="th">Transformer name</th>
+<th data-quarto-table-cell-role="th">Transformer longitude</th>
+<th data-quarto-table-cell-role="th">Transformer latitude</th>
+<th data-quarto-table-cell-role="th">Transformer distance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>Miramar Beach</td>
+<td>North Beach Parking</td>
+<td>73.808845</td>
+<td>15.483450</td>
+<td>PP</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>70</td>
+<td>TF1</td>
+<td>...</td>
+<td>0</td>
+<td>135000</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>POINT (73.80885 15.48345)</td>
+<td>CLUBE TENNIS DE GASPER</td>
+<td>73.809155</td>
+<td>15.482570</td>
+<td>0.103548</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>Caculo Mall</td>
+<td>Malls</td>
+<td>73.817859</td>
+<td>15.486461</td>
+<td>PP</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>70</td>
+<td>TF1</td>
+<td>...</td>
+<td>0</td>
+<td>135000</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>POINT (73.81786 15.48646)</td>
+<td>CACULO MALL</td>
+<td>73.818163</td>
+<td>15.486739</td>
+<td>0.045180</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>Panjim KTC Bus Stand</td>
+<td>Transit locations - Bus stands</td>
+<td>73.838266</td>
+<td>15.496108</td>
+<td>PP</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>70</td>
+<td>TF1</td>
+<td>...</td>
+<td>0</td>
+<td>135000</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>POINT (73.83827 15.49611)</td>
+<td>KTC Bus stand</td>
+<td>73.838134</td>
+<td>15.495092</td>
+<td>0.114134</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>Multi-Level Car Park GTDC</td>
+<td>CESL Proposed Panaji locatio</td>
+<td>73.836559</td>
+<td>15.499065</td>
+<td>PP</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>70</td>
+<td>TF1</td>
+<td>...</td>
+<td>0</td>
+<td>135000</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>POINT (73.83656 15.49906)</td>
+<td>Managing Director(GTDC)</td>
+<td>73.836074</td>
+<td>15.499388</td>
+<td>0.063610</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>INOX Goa</td>
+<td>CESL Proposed Panaji locatio</td>
+<td>73.821097</td>
+<td>15.498726</td>
+<td>PP</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>70</td>
+<td>TF1</td>
+<td>...</td>
+<td>0</td>
+<td>135000</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>POINT (73.82110 15.49873)</td>
+<td>INOX LEISURE LTD (MULTIPLEX)</td>
+<td>73.821407</td>
+<td>15.498623</td>
+<td>0.035425</td>
+</tr>
+</tbody>
+</table>
+
+<p>5 rows × 27 columns</p>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="read_globals" class="level3">
+<h3 class="anchored" data-anchor-id="read_globals">read_globals</h3>
+<blockquote class="blockquote">
+<pre><code> read_globals (m, s, t, g, p, charging_type, ui_inputs)</code></pre>
+</blockquote>
+<p>This function returns all global parameters read from the xlsx.</p>
+<p><code>Arguments</code>:</p>
+<ol type="1">
+<li><code>m</code>: dataframe of model parameters (from model.xlsx)</li>
+<li><code>s</code>: dataframe of sites (from sites.xlsx)</li>
+<li><code>t</code>: dataframe of traffic profile (from traffic.xlsx)</li>
+<li><code>g</code>: dataframe of grid parameters (from grid.xlsx)</li>
+<li><code>p</code>: dataframe of parking parameters (from parking.xlsx)</li>
+<li><code>charging_type</code>: a string <code>opportunity_charging</code> or <code>destination_charging</code></li>
+<li><code>ui_inputs</code>: dictionary of all parameters selected by use from the frontend with the UI</li>
+</ol>
+<p><code>Returns</code>:</p>
+<p>A dictionary with all hyperparameters required for the model to run</p>
+<div class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># example usage</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>ui_inputs <span class="op">=</span> { </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"planning_scenario"</span>: <span class="st">"Public places"</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"years_of_analysis"</span>: <span class="dv">2</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Ai"</span>: <span class="dv">50</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Li"</span>: <span class="dv">1500</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Bipc"</span>: <span class="fl">.25</span>,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Birate"</span>: <span class="fl">3.5</span>,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"MK"</span>: <span class="fl">.15</span>,</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Eg"</span>: <span class="fl">5.5</span>,</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"cabling_cost"</span>:<span class="dv">500</span>,</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"capex_2W"</span>: <span class="dv">2500</span>,</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"capex_3WS"</span>: <span class="dv">112000</span>,</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"capex_4WS"</span>: <span class="dv">250000</span>,</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"capex_4WF"</span>: <span class="dv">1500000</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"hoarding cost"</span>: <span class="dv">900000</span>,</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"kiosk_cost"</span>: <span class="dv">180000</span>,</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">"year1_conversion"</span>: <span class="fl">0.02</span>,</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"year2_conversion"</span>: <span class="fl">0.05</span>,</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"year3_conversion"</span>: <span class="fl">0.1</span>,</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"holiday_percentage"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"fast_charging"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">"slow_charging"</span>: <span class="fl">0.15</span>,</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> read_globals(m,s,t,g,p, <span class="st">'opportunity_charging'</span>, ui_inputs)</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(r[<span class="st">'Kj'</span>])</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(r[<span class="st">'charger_types'</span>])</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(r[<span class="st">'Cij'</span>][<span class="st">'4WS'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{'2W': 40000, '4WS': 200000, '4WF': 1825000}
+['2W', '4WS', '4WF']
+[1, 1, 1, 1, 1, 1, 1, 1, 1]</code></pre>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

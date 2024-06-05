@@ -1,0 +1,18 @@
+{
+  "02_maps.ipynb": {
+    "maps.html": "42edff3e"
+  },
+  "03_analysis.ipynb": {
+    "analysis.html": "8c07e18c"
+  },
+  "index.ipynb": {
+    "index.html": "dc36da83",
+    "README.md": "7f235ca3"
+  },
+  "00_config.ipynb": {
+    "config.html": "19ec180f"
+  },
+  "01_model.ipynb": {
+    "model.html": "5c2e8a6c"
+  }
+}

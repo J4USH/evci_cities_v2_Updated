@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "evci_tool"
+  site-url: "https://AnoopRKulkarni.github.io/evci_tool/"
+  description: "Backend Python scripts for the EVCI tool sans frontend"
+  repo-branch: main
+  repo-url: "https://github.com/AnoopRKulkarni/evci_tool/"

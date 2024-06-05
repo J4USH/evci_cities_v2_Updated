@@ -1,0 +1,8 @@
+website:
+  sidebar:
+    contents:
+      - index.ipynb
+      - 00_config.ipynb
+      - 01_model.ipynb
+      - 02_maps.ipynb
+      - 03_analysis.ipynb

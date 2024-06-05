@@ -1,0 +1,14 @@
+fiona
+rtree
+tqdm
+numpy
+pandas
+geopandas
+matplotlib
+shapely 
+scipy
+openpyxl
+flask
+flask_restful
+flask_cors
+requests

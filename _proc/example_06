@@ -1,0 +1,30 @@
+from evci_tool.analysis import *
+
+ui_inputs = { 
+    "planning_scenario": "Public places",
+    "years_of_analysis": [1,2,3],
+    "Ai": 60,
+    "Li": 1500,
+    "Bipc": 0,
+    "Birate": 4,
+    "Eg": 4.5,
+    "backoff_factor":1,
+    "cabling_cost": 500,
+    "capex_2W": 40000,
+    "capex_3WS": 41000,
+    "capex_4WS": 210000,
+    "capex_4WF": 1300000,
+    "hoarding cost": 0,
+    "kiosk_cost": 0,
+    "year1_conversion": 0.01,
+    "year2_conversion": 0.02,
+    "year3_conversion": 0.09,
+    "holiday_percentage": 0.27,
+    "fast_charging": 0.08,
+    "slow_charging": 0.08,
+    "cluster": True,
+    "cluster_th": 0.53,
+    "plot_dendrogram": False
+}
+
+analysis = analyze_sites('abc127','ahmedabad',ui_inputs)
