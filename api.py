@@ -68,8 +68,7 @@ async def analyze(request: AnalyzeRequest):
     db_input = results[0]
 
     # Close database connection
-    mycursor.close()
-    mydb.close()
+    
 
     # Format db_input for compatibility
     for key, value in db_input.items():
@@ -99,10 +98,67 @@ async def analyze(request: AnalyzeRequest):
     df3.to_csv('data/output/destination_cluster.csv', index=False)
     df3 = pd.read_csv('data/output/destination_cluster.csv')
 
+    df1['analysis_id']=db_input['id']
+    df1['outputFile']="opportunity_initial"
+    df1['margin'] = df1['margin'].astype(int)
+    df1['createdby']=db_input['createdBy']
+
+
+    df1.insert(0, 'analysis_id', df1.pop('analysis_id'))  # Move 'analysis_id' to the first column
+    df1.insert(1, 'outputFile', df1.pop('outputFile')) 
+    df1['margin'] = df1['margin'].astype(int)
+    df2['createdby']=db_input['createdBy']
+
+
+
+    df2['analysis_id']=db_input['id']
+    df2['outputFile']="destination_initial"
+    df2['margin'] = df1['margin'].astype(int)
+    df2['createdby']=db_input['createdBy']
+
+
+    df2.insert(0, 'analysis_id', df2.pop('analysis_id'))  # Move 'analysis_id' to the first column
+    df2.insert(1, 'outputFile', df2.pop('outputFile')) 
+
+    df3['analysis_id']=db_input['id']
+    df3['outputFile']="destination_cluster"
+    df3['margin'] = df1['margin'].astype(int)
+    df3['createdby']=db_input['createdBy']
+
+    df3.insert(0, 'analysis_id', df3.pop('analysis_id'))  # Move 'analysis_id' to the first column
+    df3.insert(1, 'outputFile', df3.pop('outputFile')) 
+
+
+
+    print(df1.columns)
+    print(df2.columns)
+    print(df3.columns)
+    insert_query = f"""
+INSERT INTO analysis_responses (
+    analysisInput_ID, output_for, location_name, latitude, longitude, 
+    transformer_name, transformer_latitude, transformer_longitutde, transformer_distance, 
+    number_of_vehicle, year_1, kiosk_hoarding, hoarding_margin, geometry, utiliztion, 
+    unserviced, capex, opex, margin, max_vehicles, estimated_vehicles, createdBy
+) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+"""
+    
+    for _, row in df1.iterrows():
+        mycursor.execute(insert_query, tuple(row))
+
+    for _, row in df2.iterrows():
+        mycursor.execute(insert_query, tuple(row))
+
+    for _, row in df3.iterrows():
+        mycursor.execute(insert_query, tuple(row))
+
 # Convert DataFrame to JSON
     json_data1 = df1.to_json(orient='records', indent=4)
     json_data2 = df2.to_json(orient='records', indent=4)
     json_data3 = df3.to_json(orient='records', indent=4)
+
+    mydb.commit()
+    mycursor.close()
+    mydb.close()
 
     # Return JSON response
     return json_data1,json_data2,json_data3
