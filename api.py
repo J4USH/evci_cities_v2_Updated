@@ -100,20 +100,17 @@ async def analyze(request: AnalyzeRequest):
 
     df1['analysis_id']=db_input['id']
     df1['outputFile']="opportunity_initial"
-    df1['margin'] = df1['margin'].astype(int)
     df1['createdby']=db_input['createdBy']
 
 
     df1.insert(0, 'analysis_id', df1.pop('analysis_id'))  # Move 'analysis_id' to the first column
     df1.insert(1, 'outputFile', df1.pop('outputFile')) 
-    df1['margin'] = df1['margin'].astype(int)
     df2['createdby']=db_input['createdBy']
 
 
 
     df2['analysis_id']=db_input['id']
     df2['outputFile']="destination_initial"
-    df2['margin'] = df1['margin'].astype(int)
     df2['createdby']=db_input['createdBy']
 
 
@@ -122,7 +119,6 @@ async def analyze(request: AnalyzeRequest):
 
     df3['analysis_id']=db_input['id']
     df3['outputFile']="destination_cluster"
-    df3['margin'] = df1['margin'].astype(int)
     df3['createdby']=db_input['createdBy']
 
     df3.insert(0, 'analysis_id', df3.pop('analysis_id'))  # Move 'analysis_id' to the first column
@@ -130,9 +126,7 @@ async def analyze(request: AnalyzeRequest):
 
 
 
-    print(df1.columns)
-    print(df2.columns)
-    print(df3.columns)
+
     insert_query = f"""
 INSERT INTO analysis_responses (
     analysisInput_ID, output_for, location_name, latitude, longitude, 
