@@ -10,11 +10,13 @@ app = FastAPI()
 
 # Pydantic model to define input structure
 class AnalyzeRequest(BaseModel):
-    id: int
+    analysisInput_ID: int
+    site_id:int
+    
 
 # Default UI inputs
 ui_inputs = { 
-    "planning_scenario": "Public places",
+    "planning_scenario": "Public Places",
     "years_of_analysis": [1, 2, 3],
     "Ai": 50,
     "Li": 1500,
@@ -42,9 +44,11 @@ ui_inputs = {
 
 @app.post("/analyze")
 async def analyze(request: AnalyzeRequest):
-    idSelect = request.id
+    idSelect = request.analysisInput_ID
+    filename = request.site_id
+    
 
-    # Database connection and query
+
     query = "SELECT * FROM analysis_inputs WHERE id = %s;"
     mydb = mysql.connector.connect(
         host="139.59.23.75",
@@ -58,12 +62,12 @@ async def analyze(request: AnalyzeRequest):
 
     # Retrieve column names and data
     column_names = [i[0] for i in mycursor.description]
-    results = [{**dict(zip(column_names, row)), "plot_dendrogram": "true"} for row in mycursor.fetchall()]
+    results = [{**dict(zip(column_names, row))} for row in mycursor.fetchall()]
 
     if not results:
         mycursor.close()
         mydb.close()
-        raise HTTPException(status_code=404, detail="No data found for given ID")
+        return {"status": "failure","message":"analysis not generated successfully"}
 
     db_input = results[0]
 
@@ -75,54 +79,110 @@ async def analyze(request: AnalyzeRequest):
         if isinstance(value, Decimal):
             db_input[key] = float(value)
         elif key == "years_of_analysis":  
-            db_input[key] = list(range(1, value + 1))
+            db_input[key] = list(range(1, db_input[key]+1))
+        
 
     # Override defaults with database values if present
     for key in ui_inputs:
         if key in db_input:
-            ui_inputs[key] = db_input[key]
+            if db_input[key] is not None:
+                ui_inputs[key] = db_input[key]
 
+    
+    if(db_input['capex_2w_charger'] is not None):
+        ui_inputs['capex_2W']=db_input['capex_2w_charger']
+    if(db_input['capex_3w_charger'] is not None):
+        ui_inputs['capex_3WS']=db_input['capex_3w_charger']
+    if(db_input['capex_4w_charger'] is not None):
+        ui_inputs['capex_4WS']=db_input['capex_4w_charger']
+    if(db_input['capex_4wf_charger'] is not None):
+        ui_inputs['capex_4WF']=db_input['capex_4wf_charger']
+    if(db_input['hoarding_capex_cost'] is not None):
+        ui_inputs['hoarding cost']=db_input['hoarding_capex_cost']
+    if(db_input['kiosk_capex_cost'] is not None):
+        ui_inputs['kiosk_cost']=db_input['kiosk_capex_cost']
+    if(db_input['year_1_conversion'] is not None):
+        ui_inputs['year1_conversion']=db_input['year_1_conversion']
+    if(db_input['year_2_conversion'] is not None):
+        ui_inputs['year2_conversion']=db_input['year_2_conversion']
+    if(db_input['year_3_conversion'] is not None):
+        ui_inputs['year3_conversion']=db_input['year_3_conversion']
+    
+
+
+    if ui_inputs["cluster"] == 1:
+        ui_inputs["cluster"]=True
+        print(ui_inputs["cluster"])
+    else:
+        ui_inputs["cluster"]=False
+
+    if ui_inputs["plot_dendrogram"] == 1:
+        ui_inputs["plot_dendrogram"]=True
+    else:
+        ui_inputs["plot_dendrogram"]=False
+    filename = str(filename)
+
+    idSelect=str(idSelect)
+    
     # Run analysis
-    analysis = analyze_sites('abc124', 'panaji', ui_inputs)
-
-    df1 = analysis['opportunity_charging']['initial']
-
-    df1.to_csv('data/output/opportunity_initial.csv', index=False) 
-
-    df1 = pd.read_csv('data/output/opportunity_initial.csv')  # Replace 'data.csv' with your file path
-
-    df2 = analysis['destination_charging']['initial']
-    df2.to_csv('data/output/destination_initial.csv', index=False) 
-    df2 = pd.read_csv('data/output/destination_initial.csv')
-    df3 = analysis['destination_charging']['cluster']
-    df3.to_csv('data/output/destination_cluster.csv', index=False)
-    df3 = pd.read_csv('data/output/destination_cluster.csv')
-
-    df1['analysis_id']=db_input['id']
-    df1['outputFile']="opportunity_initial"
-    df1['createdby']=db_input['createdBy']
+    
+        # Run analysis
+    analysis,inputFile = analyze_sites(f'output/{idSelect}',filename, ui_inputs)
 
 
-    df1.insert(0, 'analysis_id', df1.pop('analysis_id'))  # Move 'analysis_id' to the first column
-    df1.insert(1, 'outputFile', df1.pop('outputFile')) 
-    df2['createdby']=db_input['createdBy']
+    df = pd.read_excel(f'{inputFile}/Sites.xlsx')
+
+# Count occurrences of "PP", "FB", and "BD" in the "Site category" column
+    category_counts = df['Site category'].value_counts()
+
+# Filter for "PP", "FB", and "BD" specifically
+    pp_count = category_counts.get('PP', 0)
+    fb_count = category_counts.get('FH', 0)
+    bd_count = category_counts.get('BD', 0)
+
+    update_query = f"""
+UPDATE analysis_inputs
+SET publicPlaces = {pp_count}, busDepots = {bd_count}, fleetHubs = {fb_count}
+WHERE id = {idSelect};
+"""
+    mycursor.execute(update_query)
+
+    if ui_inputs["cluster"]:
+        df1Cluster= pd.read_json(f'{analysis}cluster_destination_charging_evci_analysis.json')
+        df1Cluster['analysis_id']=db_input['id']
+        df1Cluster['outputFile']="cluster_destination_charging_evci_analysis"
+        df1Cluster['createdby']=db_input['createdBy']
+
+
+        df1Cluster.insert(0, 'analysis_id', df1Cluster.pop('analysis_id'))  # Move 'analysis_id' to the first column
+        df1Cluster.insert(1, 'outputFile', df1Cluster.pop('outputFile'))
 
 
 
-    df2['analysis_id']=db_input['id']
-    df2['outputFile']="destination_initial"
-    df2['createdby']=db_input['createdBy']
+
+    df2Destination = pd.read_json(f'{analysis}initial_destination_charging_evci_analysis.json')
+    df3Intial = pd.read_json(f'{analysis}initial_opportunity_charging_evci_analysis.json')
 
 
-    df2.insert(0, 'analysis_id', df2.pop('analysis_id'))  # Move 'analysis_id' to the first column
-    df2.insert(1, 'outputFile', df2.pop('outputFile')) 
+     
+    df2Destination['createdby']=db_input['createdBy']
 
-    df3['analysis_id']=db_input['id']
-    df3['outputFile']="destination_cluster"
-    df3['createdby']=db_input['createdBy']
 
-    df3.insert(0, 'analysis_id', df3.pop('analysis_id'))  # Move 'analysis_id' to the first column
-    df3.insert(1, 'outputFile', df3.pop('outputFile')) 
+
+    df2Destination['analysis_id']=db_input['id']
+    df2Destination['outputFile']="initial_destination_charging_evci_analysis"
+    df2Destination['createdby']=db_input['createdBy']
+
+
+    df2Destination.insert(0, 'analysis_id', df2Destination.pop('analysis_id'))  # Move 'analysis_id' to the first column
+    df2Destination.insert(1, 'outputFile', df2Destination.pop('outputFile')) 
+
+    df3Intial['analysis_id']=db_input['id']
+    df3Intial['outputFile']="initial_opportunity_charging_evci_analysis"
+    df3Intial['createdby']=db_input['createdBy']
+
+    df3Intial.insert(0, 'analysis_id', df3Intial.pop('analysis_id'))  # Move 'analysis_id' to the first column
+    df3Intial.insert(1, 'outputFile', df3Intial.pop('outputFile')) 
 
 
 
@@ -133,26 +193,41 @@ INSERT INTO analysis_responses (
     transformer_name, transformer_latitude, transformer_longitutde, transformer_distance, 
     number_of_vehicle, year_1, kiosk_hoarding, hoarding_margin, geometry, utiliztion, 
     unserviced, capex, opex, margin, max_vehicles, estimated_vehicles, createdBy
-) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, %s, %s, %s, %s, %s, %s, %s, %s)
 """
-    
-    for _, row in df1.iterrows():
+
+
+    if ui_inputs["cluster"]:
+        df1Cluster.fillna(0, inplace=True)
+        for _, row in df1Cluster.iterrows():
+            mycursor.execute(insert_query, tuple(row))
+    df2Destination.fillna(0, inplace=True)
+    for _, row in df2Destination.iterrows():
+        mycursor.execute(insert_query, tuple(row))
+    df3Intial.fillna(0, inplace=True)
+    for _, row in df3Intial.iterrows():
         mycursor.execute(insert_query, tuple(row))
 
-    for _, row in df2.iterrows():
-        mycursor.execute(insert_query, tuple(row))
 
-    for _, row in df3.iterrows():
-        mycursor.execute(insert_query, tuple(row))
-
-# Convert DataFrame to JSON
-    json_data1 = df1.to_json(orient='records', indent=4)
-    json_data2 = df2.to_json(orient='records', indent=4)
-    json_data3 = df3.to_json(orient='records', indent=4)
+    insert_query = f"""
+            INSERT INTO analysis_response_file_logs 
+            (site_ID, analysisInput_ID, outputFor, excelFilePath, isActive, createdBy) 
+            VALUES (%s, %s, %s, %s, %s,%s)
+            """
+    data = [
+                (filename, idSelect, "cluster_destination_charging_evci_analysis", analysis+"cluster_destination_charging_evci_analysis.xlsx", "1", db_input['createdBy']),
+                (filename, idSelect, "initial_destination_charging_evci_analysis", analysis+"initial_destination_charging_evci_analysis.xlsx", "1", db_input['createdBy']),
+                (filename, idSelect, "initial_opportunity_charging_evci_analysis", analysis+"initial_opportunity_charging_evci_analysis.xlsx", "1", db_input['createdBy'])
+            ]
+    for row in data:
+        mycursor.execute(insert_query, row)
 
     mydb.commit()
     mycursor.close()
     mydb.close()
 
-    # Return JSON response
-    return json_data1,json_data2,json_data3
+    return {"status":"success","message":"generated"}
+
+
+    
+    

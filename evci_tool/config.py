@@ -9,46 +9,55 @@ import os
 import numpy as np
 import pandas as pd
 import json
-
+from fastapi import HTTPException
 import geopandas as gpd
 import shapely
 
 import warnings
 warnings.filterwarnings("ignore")
 
-def check_files_availability(urban_area:str, input_path="data/sites/"):
+def check_files_availability(urban_area:str, input_path="../../../media/evci/uploads/dataManagement/"):
     "This function simply checks if all the required input files mentioned above are available."
 
     INPUT_PATH = input_path + urban_area + '/'
 
     files_not_found = []
 
-    if not os.path.exists(input_path + 'model.xlsx'): files_not_found.append('model.xlsx')
-    if not os.path.exists(INPUT_PATH + 'sites.xlsx'): files_not_found.append('sites.xlsx')
-    if not os.path.exists(INPUT_PATH + 'traffic.xlsx'): files_not_found.append('traffic.xlsx')
-    if not os.path.exists(INPUT_PATH + 'grid.xlsx'): files_not_found.append('grid.xlsx')
-    if not os.path.exists(INPUT_PATH + 'parking.xlsx'): files_not_found.append('parking.xlsx')
+    if not os.path.exists(input_path + 'modelCity.xlsx'): files_not_found.append('modelCity.xlsx')
+    if not os.path.exists(INPUT_PATH + 'Sites.xlsx'): files_not_found.append('sites.xlsx')
+    if not os.path.exists(INPUT_PATH + 'Traffic.xlsx'): files_not_found.append('traffic.xlsx')
+    if not os.path.exists(INPUT_PATH + 'Grid.xlsx'): files_not_found.append('grid.xlsx')
+    if not os.path.exists(INPUT_PATH + 'Parking.xlsx'): files_not_found.append('parking.xlsx')
     
     return files_not_found
 
 # %% ../00_config.ipynb 7
-def setup_and_read_data(urban_area:str, input_path="data/sites/", output_path="data/analysis/", request_id=""):
+def setup_and_read_data(urban_area:str, input_path="../../../media/evci/uploads/dataManagement/", output_path="../../../media/evci/uploads/dataManagement/", request_id=""):
     "This function sets up paths and reads input excel files for a specified corridor"
 
     INPUT_PATH = input_path + urban_area + '/'
-    OUTPUT_PATH = output_path + '/' + request_id + '/'
-
+    
+    OUTPUT_PATH = output_path + '/' + urban_area +'/' + request_id + '/'
+    print(OUTPUT_PATH)
+    
+	
     if not os.path.exists(OUTPUT_PATH):
-        os.mkdir (OUTPUT_PATH)
-        
+       try:
+           os.makedirs(OUTPUT_PATH, exist_ok=True)
+           print(f"Directory created successfully: {OUTPUT_PATH}")
+       except Exception as e:
+          print(f"Failed to create directory: {e}")
+
+          
     try:
-        model   = pd.read_excel(input_path + "model.xlsx", sheet_name=None)
-        sites   = pd.read_excel(INPUT_PATH + "sites.xlsx", sheet_name=None) 
-        traffic = pd.read_excel(INPUT_PATH + "traffic.xlsx", sheet_name=None, header=None)
-        grid    = pd.read_excel(INPUT_PATH + "grid.xlsx", sheet_name=None)
-        parking = pd.read_excel(INPUT_PATH + "parking.xlsx", sheet_name=None, header=None)
+        model   = pd.read_excel(input_path + "modelCity.xlsx", sheet_name=None)
+        sites   = pd.read_excel(INPUT_PATH + "Sites.xlsx", sheet_name=None) 
+        traffic = pd.read_excel(INPUT_PATH + "Traffic.xlsx", sheet_name=None, header=None)
+        grid    = pd.read_excel(INPUT_PATH + "Grid.xlsx", sheet_name=None)
+        parking = pd.read_excel(INPUT_PATH + "Parking.xlsx", sheet_name=None, header=None)
     except Exception as e:
-        print("error in call setup_and_read_data(): ",e)
+        error_message="error in call setup_and_read_data(): "+str(e)
+        raise HTTPException(status_code=500, detail=error_message)
     
     return model, sites, traffic, grid, parking, INPUT_PATH, OUTPUT_PATH
 
@@ -94,22 +103,22 @@ def data_integrity_check(m,s,t,g,p, verbose=False):
     return missing
 
 # %% ../00_config.ipynb 20
-def data_missing_check(sid,file,input_path="data/sites/"):
+def data_missing_check(sid,file,input_path="../../../media/evci/uploads/dataManagement/"):
     """Function checks for missing values in the excel data"""
     try:
         path = input_path+sid+"/"+file
         columns_to_check=[]
         sheet=""
-        if file=="sites.xlsx": 
+        if file=="Sites.xlsx": 
             sheet='sites'
             columns_to_check=["Name","Longitude","Latitude","type of site","Traffic congestion (4 if in city & 2 if on highway)",
             "Year for Site recommendation Hoarding/Kiosk (1 is yes & 0 is no)","Hoarding margin Kiosk margin Available area (in sqm)","Upfront cost per sqm (land)",
             "Yearly cost per sqm (land)","Upfront cost per sqm (kiosk)","Yearly cost per sqm (kiosk)","Upfront cost per sqm (hoarding)",
             "Yearly cost per sqm (hoarding)","Battery swap available (1 is yes and 0 is no)"]
-        elif file=="grid.xlsx":
+        elif file=="Grid.xlsx":
             sheet='grid'
             columns_to_check=["Name of transformer","Address","Longitude","Latitude","Tariff","Power Outage","Available load"]
-        elif file=="traffic.xlsx":
+        elif file=="Traffic.xlsx":
             sheet='profile'
             columns_to_check=["Name","vehicles"]
 
@@ -124,19 +133,21 @@ def data_missing_check(sid,file,input_path="data/sites/"):
         if len(tmpx)>0:return {"missing":True,"columns":tmpx}
         else:return {"missing":False}
     except Exception as e:
-        print("Error in call data_missing_check(): ",e)
+        error_message="Error in call data_missing_check(): "+str(e)
+        raise HTTPException(status_code=500, detail=error_message)
 
 
 # %% ../00_config.ipynb 22
-def get_category(sid,input_path="data/sites/"):
+def get_category(sid,input_path="../../../media/EVCI/uploads/dataManagement/"):
    """Function fetch site categories available in sites.xlsx file"""
    try:
-    path=input_path+sid+"sites.xlsx"
+    path=input_path+sid+"Sites.xlsx"
     cols="Site category"
     df=pd.read_excel(path,sheet_name=["sites"])
     unique_=df[cols].unique().to_list()
    except Exception as e:
-    print("error in call get_category(): ",e)
+    error_message="error in call get_category(): "+str(e)
+    raise HTTPException(status_code=500, detail=error_message)
 
 # %% ../00_config.ipynb 23
 def get_grid_data(s,g):
@@ -190,7 +201,8 @@ def get_grid_data(s,g):
             tr_name.append(g_df.loc[nearest_to_i]['Name of transformer'])
             tr_di.append(distance_from_i[nearest_to_i]/1e3)
     except Exception as e:
-        print ("error in call read_grid_data()",e)
+        error_message="error in call read_grid_data()"+str(e)
+        raise HTTPException(status_code=500, detail=error_message)
     
     s_df['Transformer name'] = tr_name
     s_df['Transformer longitude'] = tr_long

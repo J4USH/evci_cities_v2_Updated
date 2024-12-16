@@ -10,7 +10,7 @@ import pandas as pd
 import geopandas as gpd
 
 import shapely
-
+from fastapi import HTTPException
 import os,json
 from tqdm import tqdm
 
@@ -27,7 +27,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # %% ../03_analysis.ipynb 5
-def run_episode(charging_type,r,ui_inputs,s_df,txt,OUTPUT_PATH,urban_area,request_id,report={},cluster_th=0,cluster=False):
+def run_episode(charging_type,r,ui_inputs,s_df,txt,OUTPUT_PATH,urban_area,request_id,report={},cluster_th=0,cluster=True):
     "This function runs a full episode of analysis on a set of sites."
     
     print('\n' + txt.capitalize() + ' Analysis')
@@ -249,6 +249,7 @@ def analyze_sites(request_id,urban_area:str, ui_inputs):
             else:
                 final_list_of_sites = confirmed_sites.copy()
 
-        return return_analysis
+        return OUTPUT_PATH,INPUT_PATH
     except Exception as e:
-        print("error in call analyze_sites(): ",e)
+        error_message="error in call analyze_sites(): "+str(e)
+        raise HTTPException(status_code=500, detail=error_message)
