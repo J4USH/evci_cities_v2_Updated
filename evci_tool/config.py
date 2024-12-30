@@ -16,7 +16,7 @@ import shapely
 import warnings
 warnings.filterwarnings("ignore")
 
-def check_files_availability(urban_area:str, input_path="../../../media/evci/uploads/dataManagement/"):
+def check_files_availability(urban_area:str, input_path="../../../evci/public/uploads/datamanagement"):
     "This function simply checks if all the required input files mentioned above are available."
 
     INPUT_PATH = input_path + urban_area + '/'
@@ -32,7 +32,7 @@ def check_files_availability(urban_area:str, input_path="../../../media/evci/upl
     return files_not_found
 
 # %% ../00_config.ipynb 7
-def setup_and_read_data(urban_area:str, input_path="../../../media/evci/uploads/dataManagement/", output_path="../../../media/evci/uploads/dataManagement/", request_id=""):
+def setup_and_read_data(urban_area:str, input_path="../../../evci/public/uploads/datamanagement", output_path="../../../evci/public/uploads/datamanagement", request_id=""):
     "This function sets up paths and reads input excel files for a specified corridor"
 
     INPUT_PATH = input_path + urban_area + '/'
@@ -103,7 +103,7 @@ def data_integrity_check(m,s,t,g,p, verbose=False):
     return missing
 
 # %% ../00_config.ipynb 20
-def data_missing_check(sid,file,input_path="../../../media/evci/uploads/dataManagement/"):
+def data_missing_check(sid,file,input_path="../../../evci/public/uploads/datamanagement"):
     """Function checks for missing values in the excel data"""
     try:
         path = input_path+sid+"/"+file
@@ -138,7 +138,7 @@ def data_missing_check(sid,file,input_path="../../../media/evci/uploads/dataMana
 
 
 # %% ../00_config.ipynb 22
-def get_category(sid,input_path="../../../media/EVCI/uploads/dataManagement/"):
+def get_category(sid,input_path="../../../evci/public/uploads/datamanagement"):
    """Function fetch site categories available in sites.xlsx file"""
    try:
     path=input_path+sid+"Sites.xlsx"
