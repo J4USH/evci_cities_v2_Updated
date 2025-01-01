@@ -11,9 +11,10 @@ import geopandas as gpd
 
 import shapely
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 import os,json
 from tqdm import tqdm
-
+import mysql.connector
 import matplotlib.pyplot as plt
 
 from scipy.cluster.vq import kmeans2, whiten
@@ -25,9 +26,22 @@ from .model import *
 
 import warnings
 warnings.filterwarnings("ignore")
+idSelects=0
+createdBy=0
+
 
 # %% ../03_analysis.ipynb 5
-def run_episode(charging_type,r,ui_inputs,s_df,txt,OUTPUT_PATH,urban_area,request_id,report={},cluster_th=0,cluster=True):
+def run_episode(charging_type,r,ui_inputs,s_df,txt,OUTPUT_PATH,urban_area,request_id,report={},cluster_th=0,cluster=False):
+
+    mydb = mysql.connector.connect(
+        host="139.59.23.75",
+        port=5782,
+        user="dbadminusr",
+        password="$D3vel0per2024",
+        database="EVCI"
+    )
+    mycursor = mydb.cursor()
+
     "This function runs a full episode of analysis on a set of sites."
     
     print('\n' + txt.capitalize() + ' Analysis')
@@ -78,12 +92,34 @@ def run_episode(charging_type,r,ui_inputs,s_df,txt,OUTPUT_PATH,urban_area,reques
     print(f'confirmed sites with utilization > {int(cluster_th*100)}%: {confirmed_sites.shape[0]}')
     report['confirmed_utilization']=f'{int(cluster_th*100)}%: {confirmed_sites.shape[0]}'
     print(report)
+
+    insert_query = """
+INSERT INTO analysis_response_report (
+    numberOfSite, capex, opex, margin, confirmedUtilization, 
+    analysisInput_ID, output_for, createdBy
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+"""
+    values = (
+    report['no_site'], report['capex'], report['opex'], report['margin'], 
+    report['confirmed_utilization'], idSelects, (txt+"_"+charging_type), createdBy
+)
+    mycursor.execute(insert_query, values)
+    mydb.commit()
+    mycursor.close()
+    mydb.close()
         
     return s_u_df, report
 
 # %% ../03_analysis.ipynb 7
-def analyze_sites(request_id,urban_area:str, ui_inputs):
+def analyze_sites(request_id,urban_area:str, ui_inputs,idSelect,db_inputs):
     "The function analyzes sites specified as part of a corridor."
+    print(ui_inputs['cluster_th'])
+    global idSelects
+    global createdBy
+
+    idSelects=idSelect
+    createdBy=db_inputs['createdBy']
+
 
     try:
         main_res={}
@@ -203,11 +239,13 @@ def analyze_sites(request_id,urban_area:str, ui_inputs):
 
             #@title Threshold and cluster
             clustering_candidates = s_u_df[s_u_df.utilization <= cluster_th]
-            
+            print(cluster)
+            print(clustering_candidates.shape[0])
             if cluster and len(clustering_candidates) > 0:
                 clusters = []
                 print('candidates for clustering: ', clustering_candidates.shape[0])
                 points = np.array((clustering_candidates.apply(lambda x: list([x['Latitude'], x['Longitude']]),axis=1)).tolist())
+                print(points)
                 
                 if len(points)>1:
                     Z = linkage (points, method='complete', metric='euclidean');
@@ -220,6 +258,8 @@ def analyze_sites(request_id,urban_area:str, ui_inputs):
                     clustered_candidates = gpd.GeoDataFrame(clustering_candidates)
                     #base = grid_df.plot(color='none', alpha=0.2, edgecolor='black', figsize=(8,8))
                     #clustered_candidates.plot(ax=base, column=clusters, legend=True)
+                else:
+                    clustered_candidates = gpd.GeoDataFrame(clustering_candidates)
 
             #@title Build final list of sites
             confirmed_sites = s_u_df[s_u_df.utilization > cluster_th]
@@ -248,8 +288,8 @@ def analyze_sites(request_id,urban_area:str, ui_inputs):
                 return_analysis[charging_type]['cluster']=s_u_df
             else:
                 final_list_of_sites = confirmed_sites.copy()
-
-        return OUTPUT_PATH,INPUT_PATH
+        return OUTPUT_PATH,INPUT_PATH,return_analysis
     except Exception as e:
-        error_message="error in call analyze_sites(): "+str(e)
+        error_message=str(e)
+        
         raise HTTPException(status_code=500, detail=error_message)

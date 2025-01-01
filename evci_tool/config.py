@@ -9,14 +9,14 @@ import os
 import numpy as np
 import pandas as pd
 import json
-from fastapi import HTTPException
+from fastapi import HTTPException,status
 import geopandas as gpd
 import shapely
 
 import warnings
 warnings.filterwarnings("ignore")
 
-def check_files_availability(urban_area:str, input_path="../../../evci/public/uploads/datamanagement"):
+def check_files_availability(urban_area:str, input_path="../../../evci/storage/app/public/evci/uploads/dataManagement/"):
     "This function simply checks if all the required input files mentioned above are available."
 
     INPUT_PATH = input_path + urban_area + '/'
@@ -32,7 +32,7 @@ def check_files_availability(urban_area:str, input_path="../../../evci/public/up
     return files_not_found
 
 # %% ../00_config.ipynb 7
-def setup_and_read_data(urban_area:str, input_path="../../../evci/public/uploads/datamanagement", output_path="../../../evci/public/uploads/datamanagement", request_id=""):
+def setup_and_read_data(urban_area:str, input_path="../../../evci/storage/app/public/evci/uploads/dataManagement/", output_path="../../../evci/storage/app/public/evci/uploads/dataManagement/", request_id=""):
     "This function sets up paths and reads input excel files for a specified corridor"
 
     INPUT_PATH = input_path + urban_area + '/'
@@ -41,12 +41,7 @@ def setup_and_read_data(urban_area:str, input_path="../../../evci/public/uploads
     print(OUTPUT_PATH)
     
 	
-    if not os.path.exists(OUTPUT_PATH):
-       try:
-           os.makedirs(OUTPUT_PATH, exist_ok=True)
-           print(f"Directory created successfully: {OUTPUT_PATH}")
-       except Exception as e:
-          print(f"Failed to create directory: {e}")
+    
 
           
     try:
@@ -55,33 +50,104 @@ def setup_and_read_data(urban_area:str, input_path="../../../evci/public/uploads
         traffic = pd.read_excel(INPUT_PATH + "Traffic.xlsx", sheet_name=None, header=None)
         grid    = pd.read_excel(INPUT_PATH + "Grid.xlsx", sheet_name=None)
         parking = pd.read_excel(INPUT_PATH + "Parking.xlsx", sheet_name=None, header=None)
-    except Exception as e:
-        error_message="error in call setup_and_read_data(): "+str(e)
+    except FileNotFoundError as e:
+        full_path = str(e).split("'")[-2]  # Extract the missing file name
+        missing_file = os.path.basename(full_path)
+        error_message = f"PLEASE UPLOAD THE FILE: {missing_file}"
         raise HTTPException(status_code=500, detail=error_message)
+    except KeyError:
+        error_message = f"PLEASE UPLOAD THE Correct File"
+        raise HTTPException(status_code=500, detail=error_message)
+    if not os.path.exists(OUTPUT_PATH):
+       try:
+           os.makedirs(OUTPUT_PATH, exist_ok=True)
+           print(f"Directory created successfully: {OUTPUT_PATH}")
+       except Exception as e:
+          print(f"Failed to create directory: {e}")
     
     return model, sites, traffic, grid, parking, INPUT_PATH, OUTPUT_PATH
 
 # %% ../00_config.ipynb 12
-def data_availability_check(m,s,t,g,p): 
+
+
+def data_availability_check(m, s, t, g, p): 
     "This function checks if the excel files contain the mandatory worksheets."
-    
-    model_sheets = set(['planning_scenarios','charger_details','chargers_site_categories',
+
+    # Check if model sheets exist in the provided model
+    try: 
+        model_sheets = set(['planning_scenarios', 'charger_details', 'chargers_site_categories', 
                             'chargers_opportunity_charging', 'battery_specific', 'others'])
-    df = s['sites']['Opportunity charging traffic profile']
-    traffic_sheets = set(df[df != 0].unique())             
-    grid_sheets = set(['grid'])
-    parking_sheets = set(s['sites']['Site category'].unique())
-    sites_sheets = set(['sites'])
-    
-    retval = []
-    
-    if not model_sheets.issubset(set(m.keys())): retval.append('model')
-    if not sites_sheets.issubset(set(s.keys())): retval.append('sites')
-    if not traffic_sheets.issubset(set(t.keys())): retval.append('traffic')
-    if not grid_sheets.issubset(set(g.keys())): retval.append('grid')
-    if not parking_sheets.issubset(set(p.keys())): retval.append('parking')
-    
-    return retval
+        missing_model_sheets = model_sheets - set(m.keys())
+        if missing_model_sheets:
+            raise KeyError(f"Missing sheets in model: {', '.join(missing_model_sheets)}")
+    except KeyError as e:
+        error_message = f"Missing sheets in Model.xlsx: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+    # Check for the 'Opportunity charging traffic profile' column in 'sites'
+    try:  
+        df = s['sites']['Opportunity charging traffic profile']
+    except KeyError as e:
+        error_message = f"Missing column 'Opportunity charging traffic profile' in Sites.xlsx: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+    # Check for unique traffic profiles
+    try:
+        traffic_sheets = set(df[df != 0].unique())
+    except Exception as e:
+        error_message = f"Error processing traffic sheets in Sites.xlsx: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+    # Check if grid sheet exists
+    try:
+        grid_sheets = set(['grid'])
+        missing_grid_sheets = grid_sheets - set(g.keys())
+        if missing_grid_sheets:
+            raise KeyError(f"Missing grid sheet: {', '.join(missing_grid_sheets)}")
+    except KeyError as e:
+        error_message = f"Missing sheets in Grid.xlsx: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+    # Check if 'Site category' column exists in sites
+    try:  
+        parking_sheets = set(s['sites']['Site category'].unique())
+    except KeyError as e:
+        error_message = f"Missing column 'Site category' in Sites.xlsx: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+    # Check if 'sites' sheet exists
+    try:
+        sites_sheets = set(['sites'])
+        missing_sites_sheets = sites_sheets - set(s.keys())
+        if missing_sites_sheets:
+            raise KeyError(f"Missing sheet 'sites' in Sites.xlsx")
+    except KeyError as e:
+        error_message = f"Missing sheet 'sites' in Sites.xlsx: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+    # Finally, check for missing sheets in each data source
+    try:
+        retval = []
+
+        if not model_sheets.issubset(set(m.keys())): 
+            retval.append('model')
+        if not sites_sheets.issubset(set(s.keys())): 
+            retval.append('sites')
+        if not traffic_sheets.issubset(set(t.keys())): 
+            retval.append('traffic')
+        if not grid_sheets.issubset(set(g.keys())): 
+            retval.append('grid')
+        if not parking_sheets.issubset(set(p.keys())): 
+            retval.append('parking')
+
+        if retval:
+            raise KeyError(f"Missing sheets: {', '.join(retval)}")
+
+        return retval
+    except KeyError as e:
+        error_message = f"Missing sheets: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
 
 # %% ../00_config.ipynb 16
 def data_integrity_check(m,s,t,g,p, verbose=False):
@@ -103,7 +169,7 @@ def data_integrity_check(m,s,t,g,p, verbose=False):
     return missing
 
 # %% ../00_config.ipynb 20
-def data_missing_check(sid,file,input_path="../../../evci/public/uploads/datamanagement"):
+def data_missing_check(sid,file,input_path="../../../evci/storage/app/public/evci/uploads/dataManagement/"):
     """Function checks for missing values in the excel data"""
     try:
         path = input_path+sid+"/"+file
@@ -115,10 +181,10 @@ def data_missing_check(sid,file,input_path="../../../evci/public/uploads/dataman
             "Year for Site recommendation Hoarding/Kiosk (1 is yes & 0 is no)","Hoarding margin Kiosk margin Available area (in sqm)","Upfront cost per sqm (land)",
             "Yearly cost per sqm (land)","Upfront cost per sqm (kiosk)","Yearly cost per sqm (kiosk)","Upfront cost per sqm (hoarding)",
             "Yearly cost per sqm (hoarding)","Battery swap available (1 is yes and 0 is no)"]
-        elif file=="Grid.xlsx":
+        if file=="Grid.xlsx":
             sheet='grid'
             columns_to_check=["Name of transformer","Address","Longitude","Latitude","Tariff","Power Outage","Available load"]
-        elif file=="Traffic.xlsx":
+        if file=="Traffic.xlsx":
             sheet='profile'
             columns_to_check=["Name","vehicles"]
 
@@ -133,12 +199,12 @@ def data_missing_check(sid,file,input_path="../../../evci/public/uploads/dataman
         if len(tmpx)>0:return {"missing":True,"columns":tmpx}
         else:return {"missing":False}
     except Exception as e:
-        error_message="Error in call data_missing_check(): "+str(e)
+        error_message="PLEASE FILL THE MISSING DATA IN EXCEL SHEETS "
         raise HTTPException(status_code=500, detail=error_message)
 
 
 # %% ../00_config.ipynb 22
-def get_category(sid,input_path="../../../evci/public/uploads/datamanagement"):
+def get_category(sid,input_path="../../../evci/storage/app/public/evci/uploads/dataManagement/"):
    """Function fetch site categories available in sites.xlsx file"""
    try:
     path=input_path+sid+"Sites.xlsx"
@@ -146,7 +212,7 @@ def get_category(sid,input_path="../../../evci/public/uploads/datamanagement"):
     df=pd.read_excel(path,sheet_name=["sites"])
     unique_=df[cols].unique().to_list()
    except Exception as e:
-    error_message="error in call get_category(): "+str(e)
+    error_message="PLEASE GIVE THE CORRECT CATEGORY"
     raise HTTPException(status_code=500, detail=error_message)
 
 # %% ../00_config.ipynb 23
@@ -201,7 +267,7 @@ def get_grid_data(s,g):
             tr_name.append(g_df.loc[nearest_to_i]['Name of transformer'])
             tr_di.append(distance_from_i[nearest_to_i]/1e3)
     except Exception as e:
-        error_message="error in call read_grid_data()"+str(e)
+        error_message="Missing column in grid.xlsx :-"+str(e)
         raise HTTPException(status_code=500, detail=error_message)
     
     s_df['Transformer name'] = tr_name
@@ -212,153 +278,186 @@ def get_grid_data(s,g):
     return s_df
 
 # %% ../00_config.ipynb 26
-def read_globals(m,s,t,g,p,charging_type,ui_inputs):
-  "This function returns all global parameters read from the xlsx."
-  
-  x = json.dumps(ui_inputs)
-  ui_inputs = json.loads(x)
+ 
 
-  r = {}
+def read_globals(m, s, t, g, p, charging_type, ui_inputs):
+    try:
+        "This function returns all global parameters read from the xlsx."
 
-  df_p = m['planning_scenarios']
-  df_c = m['charger_details']
-  df_sc = m['chargers_site_categories']
-  df_b = m['battery_specific']
-  df_o = m['others']
-  
-  scenario_code = df_p[df_p['Site categories']==ui_inputs['planning_scenario']]['Scenario code'].iloc[0]
+        x = json.dumps(ui_inputs)
+        ui_inputs = json.loads(x)
 
-  # read all other parameters from the xlsx
-  
-  r['scenario_code']=scenario_code
-  r['M'] = df_p[df_p['Site categories']==ui_inputs['planning_scenario']]['Charger types'].iloc[0].split(',')
-  r['C'] = r['M']
+        r = {}
 
-  r['Kj'] = {}
-  r['Dj'] = {}
-  r['Hj'] = {}
-  r['Qj'] = {}
-  r['tj'] = {}
-  r['Mj'] = {}
-  r['Gk'] = {}
-  r['Cij'] = {}
+        df_p = m['planning_scenarios']
 
-  for c in r['C']:
-    df_t = df_c[df_c['Type of vehicle']==c]
-    charger = df_t['Compatible charger'].iloc[0]
-    if charging_type == 'opportunity_charging':
-      r['Cij'][c] = [i*df_sc[(df_sc['Chargers']==charger) & (df_sc['Site categories']==ui_inputs['planning_scenario'])]['No. of chargers'].iloc[0] for i in s['sites']['No. of charger bundles opportunity charging']]
-    else:
-      r['Cij'][c] = [i*df_sc[(df_sc['Chargers']==charger) & (df_sc['Site categories']==ui_inputs['planning_scenario'])]['No. of chargers'].iloc[0] for i in s['sites']['No. of charger bundles destination charging']]
-    r['Kj'][c] = int(df_t['Capex per charger'].iloc[0].split('-')[0])
-    r['Dj'][c] = df_t['Charging power'].iloc[0]
-    #r['Hj'][c] = df_t['Required space per charger'].iloc[0]
-    r['Qj'][c] = df_t['Annual maintenance per charger'].iloc[0]
-    if charging_type == "opportunity_charging":
-      r['tj'][c] = df_t['Charging time for opportunity charging (hrs)'].iloc[0]
-    else:
-      r['tj'][c] = df_t['Charging time for destination charging (hrs)'].iloc[0]
+        
 
-  r['N'] = 500
-  r['Ng'] = 0
+        df_c = m['charger_details']
+        df_sc = m['chargers_site_categories']
+        df_b = m['battery_specific']
+        df_o = m['others']
 
-  r['timeslots'] = {k: 24/v for k, v in r['tj'].items()}
-  timeslots = r['timeslots']
-  
-  df_t = s['sites']
-  r['Nc'] = df_t[df_t['Site category']==scenario_code].shape[0]
-  Nc = r['Nc']
+        print(df_p)
+        print(ui_inputs['planning_scenario'])
+        # Scenario code lookup with error handling
+        try:
+            scenario_code = df_p[df_p['Site categories'] == ui_inputs['planning_scenario']]['Scenario code'].iloc[0]
+        except IndexError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Scenario code not found for the given planning scenario.")
 
-  r['Gi'] = [0]*Nc
-  r['Ri'] = [0]*Nc
-  r['Wi'] = [ui_inputs['cabling_cost']]*Nc
-  r['Ai'] = [ui_inputs['Ai']]*Nc
-  r['Li'] = [ui_inputs['Li']]*Nc
-  r['Bi'] = [ui_inputs['Bipc'] * ui_inputs['Birate'] * 24 * 365]*Nc # e.g. 25% of Rs 3.5/KWh per year
+        # Read all other parameters from the xlsx
+        r['scenario_code'] = scenario_code
+        r['M'] = df_p[df_p['Site categories'] == ui_inputs['planning_scenario']]['Charger types'].iloc[0].split(',')
+        r['C'] = r['M']
 
-  r['MH'] = [s['sites'].loc[i]['Hoarding margin'] for i in range(Nc)]
-  r['MK'] = [s['sites'].loc[i]['Kiosk margin'] for i in range(Nc)]
+        r['Kj'] = {}
+        r['Dj'] = {}
+        r['Hj'] = {}
+        r['Qj'] = {}
+        r['tj'] = {}
+        r['Mj'] = {}
+        r['Gk'] = {}
+        r['Cij'] = {}
 
-  r['Eg'] = {k: [ui_inputs['Eg']] * int(v) for k, v in timeslots.items()}
-  r['Er'] = {k: [0] * int(v) for k, v in timeslots.items()}
-  r['Mg'] = {k: [ui_inputs['Eg'] * r['MK'][0]] * int(v) for k, v in timeslots.items()} # FIX THIS index 0 !!
-  r['Mr'] = {k: [0] * int(v) for k, v in timeslots.items()}
-  r['l']  = {k: [1] * int(v) for k, v in timeslots.items()}
+        for c in r['C']:
+            try:
+                df_t = df_c[df_c['Type of vehicle'] == c]
+                charger = df_t['Compatible charger'].iloc[0]
+            except IndexError:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Charger details not found for vehicle type: {c}")
+
+            # Handling charging type and charger compatibility
+            if charging_type == 'opportunity_charging':
+                r['Cij'][c] = [
+                    i * df_sc[(df_sc['Chargers'] == charger) & (df_sc['Site categories'] == ui_inputs['planning_scenario'])]['No. of chargers'].iloc[0]
+                    for i in s['sites']['No. of charger bundles opportunity charging']
+                ]
+            else:
+                r['Cij'][c] = [
+                    i * df_sc[(df_sc['Chargers'] == charger) & (df_sc['Site categories'] == ui_inputs['planning_scenario'])]['No. of chargers'].iloc[0]
+                    for i in s['sites']['No. of charger bundles destination charging']
+                ]
+
+            r['Kj'][c] = int(df_t['Capex per charger'].iloc[0].split('-')[0])
+            r['Dj'][c] = df_t['Charging power'].iloc[0]
+            r['Qj'][c] = df_t['Annual maintenance per charger'].iloc[0]
+            if charging_type == "opportunity_charging":
+                r['tj'][c] = df_t['Charging time for opportunity charging (hrs)'].iloc[0]
+            else:
+                r['tj'][c] = df_t['Charging time for destination charging (hrs)'].iloc[0]
+
+        r['N'] = 500
+        r['Ng'] = 0
+
+        r['timeslots'] = {k: 24 / v for k, v in r['tj'].items()}
+        timeslots = r['timeslots']
+
+        df_t = s['sites']
+        try:
+            r['Nc'] = df_t[df_t['Site category'] == scenario_code].shape[0]
+        except KeyError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid site category.")
+
+        Nc = r['Nc']
+
+        r['Gi'] = [0] * Nc
+        r['Ri'] = [0] * Nc
+        r['Wi'] = [ui_inputs['cabling_cost']] * Nc
+        r['Ai'] = [ui_inputs['Ai']] * Nc
+        r['Li'] = [ui_inputs['Li']] * Nc
+        r['Bi'] = [ui_inputs['Bipc'] * ui_inputs['Birate'] * 24 * 365] * Nc
+
+        r['MH'] = [s['sites'].loc[i]['Hoarding margin'] for i in range(Nc)]
+        r['MK'] = [s['sites'].loc[i]['Kiosk margin'] for i in range(Nc)]
+
+        r['Eg'] = {k: [ui_inputs['Eg']] * int(v) for k, v in timeslots.items()}
+        r['Er'] = {k: [0] * int(v) for k, v in timeslots.items()}
+        r['Mg'] = {k: [ui_inputs['Eg'] * r['MK'][0]] * int(v) for k, v in timeslots.items()}
+        r['Mr'] = {k: [0] * int(v) for k, v in timeslots.items()}
+        r['l'] = {k: [1] * int(v) for k, v in timeslots.items()}
+
+        r['K'] = ui_inputs['years_of_analysis']
+        r['charger_types'] = r['M']
+        r['years_of_analysis'] = ui_inputs['years_of_analysis']
+        r['capex_2W'] = ui_inputs['capex_2W']
+        r['capex_3WS'] = ui_inputs['capex_3WS']
+        r['capex_4WS'] = ui_inputs['capex_4WS']
+        r['capex_4WF'] = ui_inputs['capex_4WF']
+        r['hoarding_cost'] = 900000
+        r['kiosk_cost'] = 180000
+        r['year1_conversion'] = ui_inputs['year1_conversion']
+        r['year2_conversion'] = ui_inputs['year2_conversion']
+        r['year3_conversion'] = ui_inputs['year3_conversion']
+        r['fast_charging'] = ui_inputs['fast_charging']
+        r['slow_charging'] = ui_inputs['slow_charging']
+        r['holiday_percentage'] = ui_inputs['holiday_percentage']
+
+        # Now lets derive all other parameters that depend on the UI inputs.
+        r['CH'] = [r['hoarding_cost']] * Nc
+        r['CK'] = [r['kiosk_cost']] * Nc
+        r['pj'] = {1: r['year1_conversion'], 2: r['year2_conversion'], 3: r['year3_conversion']}
+
+        r['Pj'] = max(r['pj'].values())
+
+        # Traffic profile/ Parking profile
+        # Read hourly vehicular traffic from the traffic.xlsx or parking.xlsx depending on charging_type
+
+        p_df = {'opportunity_charging': t, 'destination_charging': p}
+
+        profiles = list(p_df[charging_type].keys())
+        djworking = {}
+
+        vehicle_type = {
+            "2W": "2W",
+            "3W": "3W",
+            "4WS": "4W",
+            "4WF": "4W",
+            "Bus": "Bus",
+        }
+
+        for profile in profiles:
+            try:
+                avg_traffic = p_df[charging_type][profile].iloc[3:27, 1].to_list()
+            except KeyError:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Traffic profile data missing for {profile}.")
+                
+            avg_traffic_per_type = {}
+            for c in r['M']:
+                tmp_df = p_df[charging_type][profile]
+                frac = tmp_df[tmp_df[0] == vehicle_type[c]].iloc[0, 1]
+                avg_traffic_per_type[c] = [i * frac for i in avg_traffic]
+
+                # Stretch or compress here based on timeslots
+                if r['timeslots'][c] > 24:
+                    scale = int(r['timeslots'][c] / 24)
+                    avg_traffic_per_type[c] = [i for i in avg_traffic_per_type[c] for _ in range(scale)]
+                else:
+                    scale = int(24 / r['timeslots'][c])
+                    avg_traffic_per_type[c] = avg_traffic_per_type[c][::scale]
+
+                djworking[c] = [np.round(i, 2) for i in avg_traffic_per_type[c]]
+            r['djworking'] = djworking
+
+            djholiday = {}
+            for profile in profiles:
+                tmp_df = p_df[charging_type][profile]
+                holiday_percentage = r['holiday_percentage'] = tmp_df[tmp_df[0] == 'holiday_percentage'].iloc[0, 1]
+                for c in r['M']:
+                    djholiday[c] = [np.round(i * holiday_percentage, 2) for i in djworking[c]]
+            r['djholiday'] = djholiday
+
+            for profile in profiles:
+                tmp_df = p_df[charging_type][profile]
+                fast_charging = tmp_df[tmp_df[0] == 'fast_charging'].iloc[0, 1]
+                slow_charging = tmp_df[tmp_df[0] == 'slow_charging'].iloc[0, 1]
+                r['qjworking'] = {}
+                r['qjholiday'] = {}
+                for c in r['M']:
+                    r['qjworking'][c] = [slow_charging + fast_charging] * int(timeslots[c])
+                    r['qjholiday'][c] = [slow_charging + fast_charging] * int(timeslots[c])
+
+        return r
     
-  r['K'] = ui_inputs['years_of_analysis']
-  r['charger_types'] = r['M']
-  r['years_of_analysis'] = ui_inputs['years_of_analysis']
-  r['capex_2W']  = ui_inputs['capex_2W']
-  r['capex_3WS'] = ui_inputs['capex_3WS']
-  r['capex_4WS'] = ui_inputs['capex_4WS']
-  r['capex_4WF'] = ui_inputs['capex_4WF']
-  r['hoarding_cost'] = 900000
-  r['kiosk_cost'] = 180000
-  r['year1_conversion'] = ui_inputs['year1_conversion']
-  r['year2_conversion'] = ui_inputs['year2_conversion']
-  r['year3_conversion'] = ui_inputs['year3_conversion']
-  r['fast_charging'] = ui_inputs['fast_charging']
-  r['slow_charging'] = ui_inputs['slow_charging']
-  r['holiday_percentage'] = ui_inputs['holiday_percentage']
-  
-  # now lets derive all other parameters that depend on the UI inputs.
-  r['CH'] = [r['hoarding_cost']]*Nc
-  r['CK'] = [r['kiosk_cost']]*Nc
-  r['pj'] = {1: r['year1_conversion'], 
-        2: r['year2_conversion'], 
-        3: r['year3_conversion']}
-
-  r['Pj'] = max(r['pj'].values()) 
-
-  #Traffic profile/ Parking profile
-  # read hourly vehicular traffic from the traffic.xlsx or parking.xlsx depending on charging_type
-  
-  p_df = {'opportunity_charging': t, 'destination_charging': p}
-
-  profiles = list(p_df[charging_type].keys())
-  djworking = {}
-
-  vehicle_type = {
-    "2W": "2W",
-    "3W": "3W",
-    "4WS": "4W",
-    "4WF": "4W",
-    "Bus": "Bus",
-  }
-
-  for profile in profiles:
-    avg_traffic = p_df[charging_type][profile].iloc[3:27,1].to_list()
-    avg_traffic_per_type = {}
-    for c in r['M']:
-      tmp_df = p_df[charging_type][profile]
-      frac = tmp_df[tmp_df[0]==vehicle_type[c]].iloc[0,1]
-      avg_traffic_per_type[c] = [i*frac for i in avg_traffic]
-      # stretch or compress here based on timeslots
-      if r['timeslots'][c] > 24:
-        scale = int(r['timeslots'][c]/24)
-        avg_traffic_per_type[c] = [i for i in avg_traffic_per_type[c] for _ in range(scale)]
-      else:
-        scale = int(24/r['timeslots'][c])
-        avg_traffic_per_type[c] = avg_traffic_per_type[c][::scale]
-      djworking[c] = [np.round(i,2) for i in avg_traffic_per_type[c]]
-    r['djworking'] = djworking
-
-    djholiday = {}
-    for profile in profiles:
-      tmp_df = p_df[charging_type][profile]
-      holiday_percentage = r['holiday_percentage'] = tmp_df[tmp_df[0]=='holiday_percentage'].iloc[0,1]
-      for c in r['M']:
-        djholiday[c] = [np.round(i*holiday_percentage,2) for i in djworking[c]]
-    r['djholiday'] = djholiday
-    
-    for profile in profiles:
-      tmp_df = p_df[charging_type][profile]
-      fast_charging = tmp_df[tmp_df[0]=='fast_charging'].iloc[0,1]
-      slow_charging = tmp_df[tmp_df[0]=='slow_charging'].iloc[0,1]
-      r['qjworking'] = {}
-      r['qjholiday'] = {}
-      for c in r['M']:
-        r['qjworking'][c] = [slow_charging + fast_charging] * int(timeslots[c])
-        r['qjholiday'][c] = [slow_charging + fast_charging] * int(timeslots[c])
-    
-  return r
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
